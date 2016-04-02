@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ $1 == '-r' ]
+then
+    if grep -q $2 /etc/hosts
+    then
+        sudo sed -i'.bak' "/127.0.0.1\t$2/d" /etc/hosts
+        echo "Unblocked $2"
+    else
+        echo 'Not blocked!'
+    fi
+else
+    if grep -q $1 /etc/hosts
+    then
+        echo 'Already blocked!'
+    else
+        echo "127.0.0.1\t$1" | sudo tee -a /etc/hosts > /dev/null
+	echo "Blocked $1"
+    fi
+fi
