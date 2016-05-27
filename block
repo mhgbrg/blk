@@ -1,19 +1,40 @@
 #!/bin/sh
 
 if [[ $1 == '-r' ]]; then
-    if grep -q $2 /etc/hosts; then
-        sudo sed -i'.bak' "/127.0.0.1\t$2/d" /etc/hosts
-        echo "Unblocked $2"
+    # Remove site
+    if [[ $2 ]]; then
+        if grep -q $2 /etc/hosts; then
+            sudo sed -i'.bak' "/127.0.0.1\t$2/d" /etc/hosts
+            echo "Unblocked $2"
+        else
+            echo "$2 is not blocked!"
+        fi
     else
-        echo 'Not blocked!'
+        while read site; do
+            block -r $site
+        done
     fi
 elif [[ $1 == '-l' ]]; then
+    # List sites
     cat /etc/hosts | grep 127.0.0.1 | grep -v localhost | sed 's/127.0.0.1\t//g'
+elif [[ $1 == '-a' ]]; then
+    # Add all sites from ~/.block-list
+    cat ~/.block-list | block
+elif [[ $1 == '-ra' ]]; then
+    # Remove all sites from ~/.block-list
+    cat ~/.block-list | block -r
 else
-    if grep -q $1 /etc/hosts; then
-        echo 'Already blocked!'
+    # Add site
+    if [[ $1 ]]; then
+        if grep -q $1 /etc/hosts; then
+            echo "$2 is already blocked!"
+        else
+            echo "127.0.0.1\t$1" | sudo tee -a /etc/hosts > /dev/null
+            echo "Blocked $1"
+        fi
     else
-        echo "127.0.0.1\t$1" | sudo tee -a /etc/hosts > /dev/null
-        echo "Blocked $1"
+        while read site; do
+            block $site
+        done
     fi
 fi
