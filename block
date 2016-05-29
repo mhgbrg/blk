@@ -6,11 +6,11 @@ block() {
     else
         echo -e "127.0.0.1\t$1" | sudo tee -a /etc/hosts > /dev/null
 
-        if [[ $2 = 0 ]]; then
-            echo "Blocked $1"
-        else
-            (sleep $(($2 * 60)); unblock $1 0 >& /dev/null)&
+        if [[ $2 ]]; then
+            (sleep $(($2 * 60)); unblock $1 >& /dev/null)&
             echo "Blocked $1 for $2 minutes"
+        else
+            echo "Blocked $1"
         fi
     fi
 }
@@ -19,11 +19,11 @@ unblock() {
     if grep -q $1 /etc/hosts; then
         sudo sed -i'.bak' "/127.0.0.1\t$1/d" /etc/hosts
 
-        if [[ $2 = 0 ]]; then
-            echo "Unblocked $1"
-        else
-            (sleep $(($2 * 60)); block $1 0 >& /dev/null)&
+        if [[ $2 ]]; then
+            (sleep $(($2 * 60)); block $1 >& /dev/null)&
             echo "Unblocked $1 for $2 minutes"
+        else
+            echo "Unblocked $1"
         fi
     else
         echo "$1 is not blocked!"
@@ -35,8 +35,8 @@ list() {
 }
 
 SITE=""
-ACTION="add"
-TIME=0
+ACTION="block"
+TIME=""
 
 while getopts s:ut:l opt; do
     case $opt in
@@ -44,7 +44,7 @@ while getopts s:ut:l opt; do
             SITE=$OPTARG
             ;;
         u)
-            ACTION="remove"
+            ACTION="unblock"
             ;;
         t)
             TIME=$OPTARG
@@ -62,20 +62,20 @@ fi
 
 if [[ $SITE ]]; then
     case $ACTION in
-        add)
+        block)
             block $SITE $TIME
             ;;
-        remove)
+        unblock)
             unblock $SITE $TIME
             ;;
     esac
 else
     while read pipe; do
         case $ACTION in
-            add)
+            block)
                 block $pipe $TIME
                 ;;
-            remove)
+            unblock)
                 unblock $pipe $TIME
                 ;;
         esac
