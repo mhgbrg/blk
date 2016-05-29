@@ -38,12 +38,12 @@ SITE=""
 ACTION="add"
 TIME=0
 
-while getopts s:rt:l opt; do
+while getopts s:ut:l opt; do
     case $opt in
         s)
             SITE=$OPTARG
             ;;
-        r)
+        u)
             ACTION="remove"
             ;;
         t)
