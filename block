@@ -9,8 +9,8 @@ block() {
         if [[ $2 = 0 ]]; then
             echo "Blocked $1"
         else
-            (sleep $2; unblock $1 0 >& /dev/null)&
-            echo "Blocked $1 for $2 seconds"
+            (sleep $(($2 * 60)); unblock $1 0 >& /dev/null)&
+            echo "Blocked $1 for $2 minutes"
         fi
     fi
 }
@@ -22,8 +22,8 @@ unblock() {
         if [[ $2 = 0 ]]; then
             echo "Unblocked $1"
         else
-            (sleep $2; block $1 0 >& /dev/null)&
-            echo "Unblocked $1 for $2 seconds"
+            (sleep $(($2 * 60)); block $1 0 >& /dev/null)&
+            echo "Unblocked $1 for $2 minutes"
         fi
     else
         echo "$1 is not blocked!"
