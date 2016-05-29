@@ -5,14 +5,26 @@ block() {
         echo "$1 is already blocked!"
     else
         echo -e "127.0.0.1\t$1" | sudo tee -a /etc/hosts > /dev/null
-        echo "Blocked $1"
+
+        if [[ $2 = 0 ]]; then
+            echo "Blocked $1"
+        else
+            (sleep $2; unblock $1 0 >& /dev/null)&
+            echo "Blocked $1 for $2 seconds"
+        fi
     fi
 }
 
 unblock() {
     if grep -q $1 /etc/hosts; then
         sudo sed -i'.bak' "/127.0.0.1\t$1/d" /etc/hosts
-        echo "Unblocked $1"
+
+        if [[ $2 = 0 ]]; then
+            echo "Unblocked $1"
+        else
+            (sleep $2; block $1 0 >& /dev/null)&
+            echo "Unblocked $1 for $2 seconds"
+        fi
     else
         echo "$1 is not blocked!"
     fi
@@ -51,20 +63,20 @@ fi
 if [[ $SITE ]]; then
     case $ACTION in
         add)
-            block $SITE
+            block $SITE $TIME
             ;;
         remove)
-            unblock $SITE
+            unblock $SITE $TIME
             ;;
     esac
 else
     while read pipe; do
         case $ACTION in
             add)
-                block $pipe
+                block $pipe $TIME
                 ;;
             remove)
-                unblock $pipe
+                unblock $pipe $TIME
                 ;;
         esac
     done
