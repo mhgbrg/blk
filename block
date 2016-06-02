@@ -4,26 +4,29 @@ block() {
     if grep -q $1 /etc/hosts; then
         echo "$1 is already blocked!"
     else
-        echo -e "127.0.0.1\t$1" | sudo tee -a /etc/hosts > /dev/null
-
-        if [[ $2 ]]; then
-            (sleep $(($2 * 60)); unblock $1 >& /dev/null)&
-            echo "Blocked $1 for $2 minutes"
-        else
-            echo "Blocked $1"
+        echo -e "127.0.0.1\t$1" | tee -a /etc/hosts > /dev/null
+        if [[ $? == 0 ]]; then
+            if [[ $2 ]]; then
+                (sleep $(($2 * 60)); unblock $1 >& /dev/null)&
+                echo "Blocked $1 for $2 minutes"
+            else
+                echo "Blocked $1"
+            fi
         fi
     fi
 }
 
 unblock() {
     if grep -q $1 /etc/hosts; then
-        sudo sed -i'.bak' "/127.0.0.1\t$1/d" /etc/hosts
+        sed -i'.bak' "/127.0.0.1\t$1/d" /etc/hosts
 
-        if [[ $2 ]]; then
-            (sleep $(($2 * 60)); block $1 >& /dev/null)&
-            echo "Unblocked $1 for $2 minutes"
-        else
-            echo "Unblocked $1"
+        if [[ $? == 0 ]]; then
+            if [[ $2 ]]; then
+                (sleep $(($2 * 60)); block $1 >& /dev/null)&
+                echo "Unblocked $1 for $2 minutes"
+            else
+                echo "Unblocked $1"
+            fi
         fi
     else
         echo "$1 is not blocked!"
