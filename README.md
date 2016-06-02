@@ -16,7 +16,7 @@ To block a website:
 
 To unblock a website:
 
-    block -r -s news.ycombinator.com
+    block -u -s news.ycombinator.com
 
 To block a list of websites, here defined in a file in the users home folder:
 
@@ -24,7 +24,7 @@ To block a list of websites, here defined in a file in the users home folder:
 
 To unblock a website for 15 minutes:
 
-    block -r -s news.ycombinator.com -t 15
+    block -u -s news.ycombinator.com -t 15
 
 To list all blocked websites:
 
