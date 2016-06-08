@@ -18,7 +18,7 @@ To unblock a website:
 
     block -u -s news.ycombinator.com
 
-To block a list of websites, here defined in a file in the users home folder:
+To block a list of websites, here defined in a file in the user's home folder:
 
     cat ~/.block-list | block
 
