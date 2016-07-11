@@ -38,8 +38,28 @@ list() {
 }
 
 SITE=""
-ACTION="block"
+ACTION=$1
 TIME=""
+SITES=()
+
+while test ${#} -gt 0
+do
+    case $1 in
+        "-t")
+            shift
+            TIME=$1
+            ;;
+        *)
+            echo $1
+            SITES+=($1)
+            ;;
+    esac
+    shift
+done
+
+for site in $SITES; do
+    echo $site
+done
 
 while getopts s:ut:l opt; do
     case $opt in
