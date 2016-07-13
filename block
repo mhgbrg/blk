@@ -43,7 +43,6 @@ shift
 case $ACTION in
     list)
         list
-        exit
         ;;
     block|unblock)
         TIME=""
@@ -65,51 +64,5 @@ case $ACTION in
         for site in ${SITES[@]}; do
             eval ${ACTION} $site $TIME
         done
-
-        echo $TIME
         ;;
 esac
-
-# while getopts s:ut:l opt; do
-#     case $opt in
-#         s)
-#             SITE=$OPTARG
-#             ;;
-#         u)
-#             ACTION="unblock"
-#             ;;
-#         t)
-#             TIME=$OPTARG
-#             ;;
-#         l)
-#             ACTION="list"
-#             ;;
-#     esac
-# done
-
-# if [[ $ACTION = "list" ]]; then
-#     list
-#     exit
-# fi
-#
-# if [[ $SITE ]]; then
-#     case $ACTION in
-#         block)
-#             block $SITE $TIME
-#             ;;
-#         unblock)
-#             unblock $SITE $TIME
-#             ;;
-#     esac
-# else
-#     while read pipe; do
-#         case $ACTION in
-#             block)
-#                 block $pipe $TIME
-#                 ;;
-#             unblock)
-#                 unblock $pipe $TIME
-#                 ;;
-#         esac
-#     done
-# fi
