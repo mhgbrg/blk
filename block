@@ -18,7 +18,7 @@ block() {
 
 unblock() {
     if grep -q $1 /etc/hosts; then
-        sed -i'.bak' $"/127.0.0.1\t$1/d" /etc/hosts
+        sed -i'.bak' $'/127.0.0.1\t'"$1"'/d' /etc/hosts
 
         if [[ $? == 0 ]]; then
             if [[ $2 ]]; then
