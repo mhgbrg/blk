@@ -18,7 +18,7 @@ block() {
 
 unblock() {
     if grep -q $1 /etc/hosts; then
-        sed -i'.bak' "/127.0.0.1\t$1/d" /etc/hosts
+        sed -i'.bak' $'/127.0.0.1\t'"$1"'/d' /etc/hosts
 
         if [[ $? == 0 ]]; then
             if [[ $2 ]]; then
@@ -37,50 +37,32 @@ list() {
     cat /etc/hosts | grep 127.0.0.1 | grep -v localhost | sed 's/127.0.0.1\t//g'
 }
 
-SITE=""
-ACTION="block"
-TIME=""
+ACTION=$1
+shift
 
-while getopts s:ut:l opt; do
-    case $opt in
-        s)
-            SITE=$OPTARG
-            ;;
-        u)
-            ACTION="unblock"
-            ;;
-        t)
-            TIME=$OPTARG
-            ;;
-        l)
-            ACTION="list"
-            ;;
-    esac
-done
+case $ACTION in
+    list)
+        list
+        ;;
+    block|unblock)
+        TIME=""
+        SITES=()
+        while test ${#} -gt 0
+        do
+            case $1 in
+                "-t")
+                    shift
+                    TIME=$1
+                    ;;
+                *)
+                    SITES+=($1)
+                    ;;
+            esac
+            shift
+        done
 
-if [[ $ACTION = "list" ]]; then
-    list
-    exit
-fi
-
-if [[ $SITE ]]; then
-    case $ACTION in
-        block)
-            block $SITE $TIME
-            ;;
-        unblock)
-            unblock $SITE $TIME
-            ;;
-    esac
-else
-    while read pipe; do
-        case $ACTION in
-            block)
-                block $pipe $TIME
-                ;;
-            unblock)
-                unblock $pipe $TIME
-                ;;
-        esac
-    done
-fi
+        for site in ${SITES[@]}; do
+            eval ${ACTION} $site $TIME
+        done
+        ;;
+esac
