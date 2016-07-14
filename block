@@ -61,8 +61,8 @@ case $ACTION in
             shift
         done
 
-        for site in ${SITES[@]}; do
-            eval ${ACTION} $site $TIME
+        for SITE in ${SITES[@]}; do
+            eval ${ACTION} $SITE $TIME
         done
         ;;
 esac
