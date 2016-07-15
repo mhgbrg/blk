@@ -1,35 +1,84 @@
 #!/usr/bin/env bash
 
+to_seconds() {
+    local TIME_AMOUNT=$1
+    local TIME_UNIT=$2
+
+    local TIME_MULTIPLIER=0
+    case $TIME_UNIT in
+        second|seconds)
+            TIME_MULTIPLIER=1
+            ;;
+        minute|minutes)
+            TIME_MULTIPLIER=60
+            ;;
+        hour|hours)
+            TIME_MULTIPLIER=3600
+            ;;
+        day|days)
+            TIME_MULTIPLIER=86400
+            ;;
+    esac
+
+    local SECONDS=$(($TIME_AMOUNT*$TIME_MULTIPLIER))
+    echo $SECONDS
+}
+
 block() {
-    if grep -q $1 /etc/hosts; then
-        echo "$1 is already blocked!"
+    local MODE=$1
+    local SITE=$2
+
+    if grep -q $SITE /etc/hosts; then
+        echo "$SITE is already blocked!"
     else
-        echo -e "127.0.0.1\t$1" | tee -a /etc/hosts > /dev/null
+        echo -e "127.0.0.1\t$SITE" | tee -a /etc/hosts > /dev/null
+
         if [[ $? == 0 ]]; then
-            if [[ $2 ]]; then
-                (sleep $2; unblock $1 >& /dev/null)&
-                echo "Blocked $1 for $2 seconds"
-            else
-                echo "Blocked $1"
-            fi
+            case $MODE in
+                simple)
+                    echo "Blocked $SITE"
+                    ;;
+                for)
+                    local TIME_AMOUNT=$3
+                    local TIME_UNIT=$4
+                    local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
+                    (sleep $SECONDS; unblock 'simple' $SITE >& /dev/null)&
+                    echo "Blocked $SITE for $TIME_AMOUNT $TIME_UNIT"
+                    ;;
+                until)
+                    echo "Blocked until"
+                    ;;
+            esac
         fi
     fi
 }
 
 unblock() {
-    if grep -q $1 /etc/hosts; then
-        sed -i'.bak' $'/127.0.0.1\t'"$1"'/d' /etc/hosts
+    local MODE=$1
+    local SITE=$2
+
+    if grep -q $SITE /etc/hosts; then
+        sed -i'.bak' $'/127.0.0.1\t'"$SITE"'/d' /etc/hosts
 
         if [[ $? == 0 ]]; then
-            if [[ $2 ]]; then
-                (sleep $(($2 * 60)); block $1 >& /dev/null)&
-                echo "Unblocked $1 for $2 seconds"
-            else
-                echo "Unblocked $1"
-            fi
+            case $MODE in
+                simple)
+                    echo "Unblocked $SITE"
+                    ;;
+                for)
+                    local TIME_AMOUNT=$3
+                    local TIME_UNIT=$4
+                    local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
+                    (sleep $SECONDS; block 'simple' $SITE >& /dev/null)&
+                    echo "Unblocked $SITE for $TIME_AMOUNT $TIME_UNIT"
+                    ;;
+                until)
+                    echo "Unblocked until"
+                    ;;
+            esac
         fi
     else
-        echo "$1 is not blocked!"
+        echo "$SITE is not blocked!"
     fi
 }
 
@@ -45,32 +94,25 @@ case $ACTION in
         list
         ;;
     block|unblock)
-        TIME=""
+        MODE='simple'
+        TIME_AMOUNT=0
+        TIME_UNIT='seconds'
         SITES=()
         while test ${#} -gt 0 # Loops through all arguments with shift.
         do
             case $1 in
                 for)
+                    MODE='for'
                     shift
                     TIME_AMOUNT=$1
                     shift
                     TIME_UNIT=$1
-                    TIME_MULTIPLIER=0
-                    case $TIME_UNIT in
-                        second|seconds)
-                            TIME_MULTIPLIER=1
-                            ;;
-                        minute|minutes)
-                            TIME_MULTIPLIER=60
-                            ;;
-                        hour|hours)
-                            TIME_MULTIPLIER=3600
-                            ;;
-                        day|days)
-                            TIME_MULTIPLIER=86400
-                            ;;
-                    esac
-                    TIME=$(($TIME_AMOUNT*$TIME_MULTIPLIER))
+                    eval ${ACTION} 'for' $SITE $TIME_AMOUNT $TIME_UNIT
+                    ;;
+                until)
+                    MODE='until'
+                    shift
+                    UNTIL=$1
                     ;;
                 *)
                     SITES+=($1)
@@ -80,7 +122,7 @@ case $ACTION in
         done
 
         for SITE in ${SITES[@]}; do
-            eval ${ACTION} $SITE $TIME
+            eval ${ACTION} $MODE $SITE $TIME_AMOUNT $TIME_UNIT
         done
         ;;
 esac
