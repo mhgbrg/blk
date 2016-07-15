@@ -7,8 +7,8 @@ block() {
         echo -e "127.0.0.1\t$1" | tee -a /etc/hosts > /dev/null
         if [[ $? == 0 ]]; then
             if [[ $2 ]]; then
-                (sleep $(($2 * 60)); unblock $1 >& /dev/null)&
-                echo "Blocked $1 for $2 minutes"
+                (sleep $2; unblock $1 >& /dev/null)&
+                echo "Blocked $1 for $2 seconds"
             else
                 echo "Blocked $1"
             fi
@@ -23,7 +23,7 @@ unblock() {
         if [[ $? == 0 ]]; then
             if [[ $2 ]]; then
                 (sleep $(($2 * 60)); block $1 >& /dev/null)&
-                echo "Unblocked $1 for $2 minutes"
+                echo "Unblocked $1 for $2 seconds"
             else
                 echo "Unblocked $1"
             fi
@@ -47,12 +47,30 @@ case $ACTION in
     block|unblock)
         TIME=""
         SITES=()
-        while test ${#} -gt 0
+        while test ${#} -gt 0 # Loops through all arguments with shift.
         do
             case $1 in
-                "-t")
+                for)
                     shift
-                    TIME=$1
+                    TIME_AMOUNT=$1
+                    shift
+                    TIME_UNIT=$1
+                    TIME_MULTIPLIER=0
+                    case $TIME_UNIT in
+                        second|seconds)
+                            TIME_MULTIPLIER=1
+                            ;;
+                        minute|minutes)
+                            TIME_MULTIPLIER=60
+                            ;;
+                        hour|hours)
+                            TIME_MULTIPLIER=3600
+                            ;;
+                        day|days)
+                            TIME_MULTIPLIER=86400
+                            ;;
+                    esac
+                    TIME=$(($TIME_AMOUNT*$TIME_MULTIPLIER))
                     ;;
                 *)
                     SITES+=($1)
