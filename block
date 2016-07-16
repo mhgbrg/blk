@@ -146,8 +146,7 @@ case $ACTION in
     block|unblock)
         SITES=()
 
-        while test ${#} -gt 0 # Loops through all arguments with shift.
-        do
+        while test ${#} -gt 0; do # Loops through all arguments with shift.
             case $1 in
                 for)
                     shift
