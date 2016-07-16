@@ -25,61 +25,111 @@ to_seconds() {
 }
 
 block() {
-    local MODE=$1
-    local SITE=$2
+    local SITE=$1
 
     if grep -q $SITE /etc/hosts; then
         echo "$SITE is already blocked!"
+        return 1
     else
         echo -e "127.0.0.1\t$SITE" | tee -a /etc/hosts > /dev/null
-
-        if [[ $? == 0 ]]; then
-            case $MODE in
-                simple)
-                    echo "Blocked $SITE"
-                    ;;
-                for)
-                    local TIME_AMOUNT=$3
-                    local TIME_UNIT=$4
-                    local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
-                    (sleep $SECONDS; unblock 'simple' $SITE >& /dev/null)&
-                    echo "Blocked $SITE for $TIME_AMOUNT $TIME_UNIT"
-                    ;;
-                until)
-                    echo "Blocked until"
-                    ;;
-            esac
-        fi
     fi
 }
 
 unblock() {
-    local MODE=$1
-    local SITE=$2
+    local SITE=$1
 
     if grep -q $SITE /etc/hosts; then
         sed -i'.bak' $'/127.0.0.1\t'"$SITE"'/d' /etc/hosts
-
-        if [[ $? == 0 ]]; then
-            case $MODE in
-                simple)
-                    echo "Unblocked $SITE"
-                    ;;
-                for)
-                    local TIME_AMOUNT=$3
-                    local TIME_UNIT=$4
-                    local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
-                    (sleep $SECONDS; block 'simple' $SITE >& /dev/null)&
-                    echo "Unblocked $SITE for $TIME_AMOUNT $TIME_UNIT"
-                    ;;
-                until)
-                    echo "Unblocked until"
-                    ;;
-            esac
-        fi
     else
         echo "$SITE is not blocked!"
+        return 1
     fi
+}
+
+block_simple() {
+    local SITES=$1
+
+    for SITE in ${SITES[@]}; do
+        block $SITE
+
+        if [[ $? == 0 ]]; then
+            echo "Blocked $SITE"
+        fi
+    done
+}
+
+unblock_simple() {
+    local SITES=$1
+
+    for SITE in ${SITES[@]}; do
+        unblock $SITE
+
+        if [[ $? == 0 ]]; then
+            echo "Unblocked $SITE"
+        fi
+    done
+}
+
+block_for() {
+    local SITES=$1
+    local TIME_AMOUNT=$2
+    local TIME_UNIT=$3
+
+    local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
+
+    for SITE in ${SITES[@]}; do
+        block $SITE
+
+        if [[ $? == 0 ]]; then
+            (sleep $SECONDS; unblock $SITE >& /dev/null)&
+            echo "Blocked $SITE for $TIME_AMOUNT $TIME_UNIT"
+        fi
+    done
+}
+
+unblock_for() {
+    local SITES=$1
+    local TIME_AMOUNT=$2
+    local TIME_UNIT=$3
+
+    local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
+
+    for SITE in ${SITES[@]}; do
+        unblock $SITE
+
+        if [[ $? == 0 ]]; then
+            (sleep $SECONDS; block $SITE >& /dev/null)&
+            echo "Unblocked $SITE for $TIME_AMOUNT $TIME_UNIT"
+        fi
+    done
+}
+
+block_until() {
+    local SITES=$1
+    local UNTIL=$2
+
+    for SITE in ${SITES[@]}; do
+        block $SITE
+
+        if [[ $? == 0 ]]; then
+            echo "./block unblock $SITE" | at $UNTIL
+            echo "Blocked $SITE until $UNTIL"
+        fi
+    done
+}
+
+unblock_until() {
+    local SITES=$1
+    local UNTIL=$2
+
+    for SITE in ${SITES[@]}; do
+        unblock $SITE
+
+        if [[ $? == 0 ]]; then
+            echo "./block block $SITE" | at $UNTIL
+            echo "Unblocked $SITE until $UNTIL"
+        fi
+    done
 }
 
 list() {
@@ -94,25 +144,26 @@ case $ACTION in
         list
         ;;
     block|unblock)
-        MODE='simple'
-        TIME_AMOUNT=0
-        TIME_UNIT='seconds'
         SITES=()
+
         while test ${#} -gt 0 # Loops through all arguments with shift.
         do
             case $1 in
                 for)
-                    MODE='for'
                     shift
                     TIME_AMOUNT=$1
                     shift
                     TIME_UNIT=$1
-                    eval ${ACTION} 'for' $SITE $TIME_AMOUNT $TIME_UNIT
+                    FN=${ACTION}'_for' # block_for or unblock_for
+                    eval ${FN} $SITES $TIME_AMOUNT $TIME_UNIT
+                    exit
                     ;;
                 until)
-                    MODE='until'
                     shift
                     UNTIL=$1
+                    FN=${ACTION}'_until' # block_until or unblock_until
+                    eval ${FN} $SITES $UNTIL
+                    exit
                     ;;
                 *)
                     SITES+=($1)
@@ -121,8 +172,7 @@ case $ACTION in
             shift
         done
 
-        for SITE in ${SITES[@]}; do
-            eval ${ACTION} $MODE $SITE $TIME_AMOUNT $TIME_UNIT
-        done
+        FN=${ACTION}'_simple' # block_simple or unblock_simple
+        eval ${FN} $SITES
         ;;
 esac
