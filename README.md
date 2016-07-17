@@ -12,23 +12,24 @@ block also has support for blocking and unblocking websites for only a set time 
 
 To block a website:
 
-    block -s news.ycombinator.com
+    blk block news.ycombinator.com
 
 To unblock a website:
 
-    block -u -s news.ycombinator.com
+    blk unblock news.ycombinator.com
 
-To block a list of websites, here defined in a file in the user's home folder:
+<!-- To block a list of websites, here defined in a file in the user's home folder:
 
     cat ~/.block-list | block
+-->
 
 To unblock a website for 15 minutes:
 
-    block -u -s news.ycombinator.com -t 15
+    blk unblock news.ycombinator.com for 15 minutes
 
 To list all blocked websites:
 
-    block -l
+    blk list
 
 ## How it works
 
