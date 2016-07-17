@@ -1,8 +1,16 @@
-# block
+# blk
 
 A simple bash scripts that makes it a breeze to block distracting websites.
 
+## Features
+
+* Block/unblock several websites at once.
+* Block/unblock **for** a set period of time, for example *3 minutes*.
+* Block/unblock **until** a specific time, for example *13:38*.
+
 ## Usage
+
+    blk block <site1> | unblock
 
 The default behaviour of block is to block a website. The website to block can either be specified with the `-s` flag, or by piping output from another script. When piping, the script expects one website per line.
 
@@ -33,4 +41,4 @@ To list all blocked websites:
 
 ## How it works
 
-The inner workings of block is ridiculously simple. To block websites it adds a line to the computer's hosts file that redirects the website to localhost.
+To block websites `blk` adds a line to the computer's hosts file that redirects the website to localhost. Depending on the permissions on your host file, you might need to run the script with `sudo`.
