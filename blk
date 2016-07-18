@@ -82,7 +82,7 @@ case $ACTION in
             shift
         done
 
-        BLOCKED_SITES=()
+        BLOCKED_SITES=''
 
         for SITE in ${SITES[@]}; do
             eval ${ACTION} $SITE # block or unblock.
@@ -108,7 +108,7 @@ case $ACTION in
                         ;;
                 esac
 
-                BLOCKED_SITES+=($SITE)
+                BLOCKED_SITES="$BLOCKED_SITES $SITE"
             fi
         done
 
@@ -124,7 +124,7 @@ case $ACTION in
         case $MODE in
             'for')
                 SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
-                (sleep $SECONDS; eval ${REVERSE_FN} $BLOCKED_SITES >& /dev/null)&
+                (sleep $SECONDS; blk $REVERSE_FN $BLOCKED_SITES >& /dev/null)&
                 ;;
             'until')
                 echo "blk $REVERSE_FN $BLOCKED_SITES" | at $UNTIL
