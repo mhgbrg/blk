@@ -3,7 +3,7 @@
 block() {
     local SITE=$1
 
-    if grep -q $SITE /etc/hosts; then
+    if grep -q "$SITE /etc/hosts"; then
         echo "$SITE is already blocked!"
         return 1
     else
@@ -14,7 +14,7 @@ block() {
 unblock() {
     local SITE=$1
 
-    if grep -q $SITE /etc/hosts; then
+    if grep -q "$SITE" /etc/hosts; then
         sed -i'.bak' $'/127.0.0.1\t'"$SITE"'/d' /etc/hosts
     else
         echo "$SITE is not blocked!"
@@ -23,7 +23,7 @@ unblock() {
 }
 
 list() {
-    cat /etc/hosts | grep 127.0.0.1 | grep -v localhost | sed $'s/127.0.0.1\t//g'
+    grep 127.0.0.1 /etc/hosts | grep -v localhost | sed $'s/127.0.0.1\t//g'
 }
 
 to_seconds() {
@@ -46,7 +46,7 @@ to_seconds() {
             ;;
     esac
 
-    local SECONDS=$(($TIME_AMOUNT*$TIME_MULTIPLIER))
+    local SECONDS=$((TIME_AMOUNT*TIME_MULTIPLIER))
     echo $SECONDS
 }
 
@@ -84,8 +84,8 @@ case $ACTION in
 
         BLOCKED_SITES=''
 
-        for SITE in ${SITES[@]}; do
-            eval ${ACTION} $SITE # block or unblock.
+        for SITE in "${SITES[@]}"; do
+            eval "${ACTION}" "$SITE" # block or unblock.
             if [[ $? == 0 ]]; then
                 case $ACTION in
                     'block')
@@ -123,11 +123,11 @@ case $ACTION in
 
         case $MODE in
             'for')
-                SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
-                (sleep $SECONDS; blk $REVERSE_FN $BLOCKED_SITES >& /dev/null)&
+                SECONDS=$(to_seconds "$TIME_AMOUNT" "$TIME_UNIT")
+                (sleep "$SECONDS"; blk $REVERSE_FN "$BLOCKED_SITES" >& /dev/null)&
                 ;;
             'until')
-                echo "blk $REVERSE_FN $BLOCKED_SITES" | at $UNTIL
+                echo "blk $REVERSE_FN $BLOCKED_SITES" | at "$UNTIL"
                 ;;
         esac
         ;;
