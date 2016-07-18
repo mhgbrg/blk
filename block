@@ -1,29 +1,5 @@
 #!/usr/bin/env bash
 
-to_seconds() {
-    local TIME_AMOUNT=$1
-    local TIME_UNIT=$2
-
-    local TIME_MULTIPLIER=0
-    case $TIME_UNIT in
-        second|seconds)
-            TIME_MULTIPLIER=1
-            ;;
-        minute|minutes)
-            TIME_MULTIPLIER=60
-            ;;
-        hour|hours)
-            TIME_MULTIPLIER=3600
-            ;;
-        day|days)
-            TIME_MULTIPLIER=86400
-            ;;
-    esac
-
-    local SECONDS=$(($TIME_AMOUNT*$TIME_MULTIPLIER))
-    echo $SECONDS
-}
-
 block() {
     local SITE=$1
 
@@ -46,56 +22,32 @@ unblock() {
     fi
 }
 
-after_block_simple() {
-    local SITE=$1
-    echo "Blocked $SITE"
-}
-
-after_unblock_simple() {
-    local SITE=$1
-    echo "Unblocked $SITE"
-}
-
-after_block_for() {
-    local SITE=$1
-    local TIME_AMOUNT=$2
-    local TIME_UNIT=$3
-
-    local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
-
-    (sleep $SECONDS; unblock $SITE >& /dev/null)&
-    echo "Blocked $SITE for $TIME_AMOUNT $TIME_UNIT"
-}
-
-after_unblock_for() {
-    local SITE=$1
-    local TIME_AMOUNT=$2
-    local TIME_UNIT=$3
-
-    local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
-
-    (sleep $SECONDS; block $SITE >& /dev/null)&
-    echo "Unblocked $SITE for $TIME_AMOUNT $TIME_UNIT"
-}
-
-after_block_until() {
-    local SITE=$1
-    local UNTIL=$2
-
-    echo "./block unblock $SITE" | at $UNTIL
-    echo "Blocked $SITE until $UNTIL"
-}
-
-after_unblock_until() {
-    local SITE=$1
-    local UNTIL=$2
-
-    echo "./block block $SITE" | at $UNTIL
-    echo "Unblocked $SITE until $UNTIL"
-}
-
 list() {
     cat /etc/hosts | grep 127.0.0.1 | grep -v localhost | sed $'s/127.0.0.1\t//g'
+}
+
+to_seconds() {
+    local TIME_AMOUNT=$1
+    local TIME_UNIT=$2
+
+    local TIME_MULTIPLIER=0
+    case $TIME_UNIT in
+        second|seconds)
+            TIME_MULTIPLIER=1
+            ;;
+        minute|minutes)
+            TIME_MULTIPLIER=60
+            ;;
+        hour|hours)
+            TIME_MULTIPLIER=3600
+            ;;
+        day|days)
+            TIME_MULTIPLIER=86400
+            ;;
+    esac
+
+    local SECONDS=$(($TIME_AMOUNT*$TIME_MULTIPLIER))
+    echo $SECONDS
 }
 
 ACTION=$1
@@ -130,25 +82,53 @@ case $ACTION in
             shift
         done
 
-        case $MODE in
-            'simple')
-                ARGS=''
+        BLOCKED_SITES=()
+
+        for SITE in ${SITES[@]}; do
+            eval ${ACTION} $SITE # block or unblock.
+            if [[ $? == 0 ]]; then
+                case $ACTION in
+                    'block')
+                        ACTION_MSG='Blocked'
+                        ;;
+                    'unblock')
+                        ACTION_MSG='Unblocked'
+                        ;;
+                esac
+
+                case $MODE in
+                    'simple')
+                        echo "$ACTION_MSG $SITE"
+                        ;;
+                    'for')
+                        echo "$ACTION_MSG $SITE for $TIME_AMOUNT $TIME_UNIT"
+                        ;;
+                    'until')
+                        echo "$ACTION_MSG $SITE until $UNTIL"
+                        ;;
+                esac
+
+                BLOCKED_SITES+=($SITE)
+            fi
+        done
+
+        case $ACTION in
+            'block')
+                REVERSE_FN='unblock'
                 ;;
-            'for')
-                ARGS="$TIME_AMOUNT $TIME_UNIT"
-                ;;
-            'until')
-                ARGS=$UNTIL
+            'unblock')
+                REVERSE_FN='block'
                 ;;
         esac
 
-        AFTER_FN='after_'${ACTION}'_'${MODE} # after_block_simple, after_unblock_for, after_block_until etc.
-
-        for SITE in ${SITES[@]}; do
-            eval ${ACTION} $SITE # block or unblock
-            if [[ $? == 0 ]]; then
-                eval ${AFTER_FN} $SITE $ARGS
-            fi
-        done
+        case $MODE in
+            'for')
+                SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
+                (sleep $SECONDS; eval ${REVERSE_FN} $BLOCKED_SITES >& /dev/null)&
+                ;;
+            'until')
+                echo "blk $REVERSE_FN $BLOCKED_SITES" | at $UNTIL
+                ;;
+        esac
         ;;
 esac
