@@ -46,90 +46,52 @@ unblock() {
     fi
 }
 
-block_simple() {
-    local SITES=$1
-
-    for SITE in ${SITES[@]}; do
-        block $SITE
-
-        if [[ $? == 0 ]]; then
-            echo "Blocked $SITE"
-        fi
-    done
+after_block_simple() {
+    local SITE=$1
+    echo "Blocked $SITE"
 }
 
-unblock_simple() {
-    local SITES=$1
-
-    for SITE in ${SITES[@]}; do
-        unblock $SITE
-
-        if [[ $? == 0 ]]; then
-            echo "Unblocked $SITE"
-        fi
-    done
+after_unblock_simple() {
+    local SITE=$1
+    echo "Unblocked $SITE"
 }
 
-block_for() {
-    local SITES=$1
+after_block_for() {
+    local SITE=$1
     local TIME_AMOUNT=$2
     local TIME_UNIT=$3
 
     local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
 
-    for SITE in ${SITES[@]}; do
-        block $SITE
-
-        if [[ $? == 0 ]]; then
-            (sleep $SECONDS; unblock $SITE >& /dev/null)&
-            echo "Blocked $SITE for $TIME_AMOUNT $TIME_UNIT"
-        fi
-    done
+    (sleep $SECONDS; unblock $SITE >& /dev/null)&
+    echo "Blocked $SITE for $TIME_AMOUNT $TIME_UNIT"
 }
 
-unblock_for() {
-    local SITES=$1
+after_unblock_for() {
+    local SITE=$1
     local TIME_AMOUNT=$2
     local TIME_UNIT=$3
 
     local SECONDS=$(to_seconds $TIME_AMOUNT $TIME_UNIT)
 
-    for SITE in ${SITES[@]}; do
-        unblock $SITE
-
-        if [[ $? == 0 ]]; then
-            (sleep $SECONDS; block $SITE >& /dev/null)&
-            echo "Unblocked $SITE for $TIME_AMOUNT $TIME_UNIT"
-        fi
-    done
+    (sleep $SECONDS; block $SITE >& /dev/null)&
+    echo "Unblocked $SITE for $TIME_AMOUNT $TIME_UNIT"
 }
 
-block_until() {
-    local SITES=$1
+after_block_until() {
+    local SITE=$1
     local UNTIL=$2
 
-    for SITE in ${SITES[@]}; do
-        block $SITE
-
-        if [[ $? == 0 ]]; then
-            echo "./block unblock $SITE" | at $UNTIL
-            echo "Blocked $SITE until $UNTIL"
-        fi
-    done
+    echo "./block unblock $SITE" | at $UNTIL
+    echo "Blocked $SITE until $UNTIL"
 }
 
-unblock_until() {
-    local SITES=$1
+after_unblock_until() {
+    local SITE=$1
     local UNTIL=$2
 
-    for SITE in ${SITES[@]}; do
-        unblock $SITE
-
-        if [[ $? == 0 ]]; then
-            echo "./block block $SITE" | at $UNTIL
-            echo "Unblocked $SITE until $UNTIL"
-        fi
-    done
+    echo "./block block $SITE" | at $UNTIL
+    echo "Unblocked $SITE until $UNTIL"
 }
 
 list() {
@@ -145,6 +107,7 @@ case $ACTION in
         ;;
     block|unblock)
         SITES=()
+        MODE='simple'
 
         while test ${#} -gt 0; do # Loops through all arguments with shift.
             case $1 in
@@ -153,16 +116,12 @@ case $ACTION in
                     TIME_AMOUNT=$1
                     shift
                     TIME_UNIT=$1
-                    FN=${ACTION}'_for' # block_for or unblock_for
-                    eval ${FN} $SITES $TIME_AMOUNT $TIME_UNIT
-                    exit
+                    MODE='for'
                     ;;
                 until)
                     shift
                     UNTIL=$1
-                    FN=${ACTION}'_until' # block_until or unblock_until
-                    eval ${FN} $SITES $UNTIL
-                    exit
+                    MODE='until'
                     ;;
                 *)
                     SITES+=($1)
@@ -171,7 +130,25 @@ case $ACTION in
             shift
         done
 
-        FN=${ACTION}'_simple' # block_simple or unblock_simple
-        eval ${FN} $SITES
+        case $MODE in
+            'simple')
+                ARGS=''
+                ;;
+            'for')
+                ARGS="$TIME_AMOUNT $TIME_UNIT"
+                ;;
+            'until')
+                ARGS=$UNTIL
+                ;;
+        esac
+
+        AFTER_FN='after_'${ACTION}'_'${MODE} # after_block_simple, after_unblock_for, after_block_until etc.
+
+        for SITE in ${SITES[@]}; do
+            eval ${ACTION} $SITE # block or unblock
+            if [[ $? == 0 ]]; then
+                eval ${AFTER_FN} $SITE $ARGS
+            fi
+        done
         ;;
 esac
