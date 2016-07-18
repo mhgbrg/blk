@@ -32,18 +32,14 @@ To block a website:
 To block a couple of websites at once:
 
     blk block news.ycombinator.com www.facebook.com www.youtube.com
+    
+To block a list of websites, here defined in a file in the user's home directory:
+
+    blk block $(cat ~/.block-list)
 
 To unblock a website:
 
     blk unblock news.ycombinator.com
-    
-To unblock a couple of websites at once:
-
-    blk unblock news.ycombinator.com www.facebook.com www.youtube.com
-
-To block a list of websites, here defined in a file in the user's home directory:
-
-    blk block $(cat ~/.block-list)
 
 To unblock a website for 15 minutes:
 
