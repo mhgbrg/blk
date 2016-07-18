@@ -52,6 +52,10 @@ To block a website until 17.30:
 To list all blocked websites:
 
     blk list
+    
+To unblock all blocked websites:
+
+    blk unblock $(blk list)
 
 ## Requirements
 
