@@ -59,4 +59,4 @@ To use `blk` you need to have bash installed. The latest version is always recom
 
 To block websites `blk` adds a line to the computer's hosts file that redirects the website to localhost. Depending on the permissions on your host file, you might need to run the script with `sudo`.
 
-To use the `until` functionality you need to have the [`at`](http://manpages.ubuntu.com/manpages/xenial/en/man1/at.1.html) command installed and working. On macOS `at` is installed per default, but the `atrun` daemon is not running. To fix this, run `launchctl load -w /System/Library/LaunchDaemons/com.apple.atrun.plist` and restart your computer (see `man at` for more info).
+To use the `until` functionality you need to have the [`at`](http://manpages.ubuntu.com/manpages/xenial/en/man1/at.1.html) command installed and working. On macOS `at` is installed per default, but the `atrun` daemon is not running. To fix this, run `launchctl load -w /System/Library/LaunchDaemons/com.apple.atrun.plist` and restart your computer (see `man atrun` for more info).
