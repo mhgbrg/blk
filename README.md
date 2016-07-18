@@ -6,7 +6,7 @@ A simple bash scripts that makes it a breeze to block distracting websites.
 
 * Block/unblock one or more websites at once.
 * Block/unblock for a set period of time, for example *2 hours*.
-* Block/unblock until a specific time, for example *13:38*.
+* Block/unblock until a specific time, for example *13.38*.
 * List all blocked websites.
 
 ## Usage
