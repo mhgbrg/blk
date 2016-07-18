@@ -133,7 +133,7 @@ unblock_until() {
 }
 
 list() {
-    cat /etc/hosts | grep 127.0.0.1 | grep -v localhost | sed 's/127.0.0.1\t//g'
+    cat /etc/hosts | grep 127.0.0.1 | grep -v localhost | sed $'s/127.0.0.1\t//g'
 }
 
 ACTION=$1
