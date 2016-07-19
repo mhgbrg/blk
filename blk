@@ -82,6 +82,10 @@ case $action in
             shift
         done
 
+        while read -r pipe; do
+            sites+=($pipe)
+        done
+
         blocked_sites=''
 
         for site in "${sites[@]}"; do
