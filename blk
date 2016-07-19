@@ -3,7 +3,7 @@
 block() {
     local site=$1
 
-    if grep -q "$site /etc/hosts"; then
+    if grep -q "$site" /etc/hosts; then
         echo "$site is already blocked!"
         return 1
     else
