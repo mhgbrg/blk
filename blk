@@ -85,7 +85,7 @@ case $action in
         blocked_sites=''
 
         for site in "${sites[@]}"; do
-            eval "${action}" "$site" # block or unblock.
+            eval "${action}" "$site"
             if [[ $? == 0 ]]; then
                 case $action in
                     'block')
