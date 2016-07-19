@@ -1,6 +1,6 @@
 # blk
 
-A simple bash scripts that makes it a breeze to block distracting websites.
+A simple bash script that makes it a breeze to block distracting websites.
 
 ## Features
 
