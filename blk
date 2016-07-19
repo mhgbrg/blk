@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 
 block() {
-    local SITE=$1
+    local site=$1
 
-    if grep -q "$SITE /etc/hosts"; then
-        echo "$SITE is already blocked!"
+    if grep -q "$site /etc/hosts"; then
+        echo "$site is already blocked!"
         return 1
     else
-        echo -e "127.0.0.1\t$SITE" | tee -a /etc/hosts > /dev/null
+        echo -e "127.0.0.1\t$site" | tee -a /etc/hosts > /dev/null
     fi
 }
 
 unblock() {
-    local SITE=$1
+    local site=$1
 
-    if grep -q "$SITE" /etc/hosts; then
-        sed -i'.bak' $'/127.0.0.1\t'"$SITE"'/d' /etc/hosts
+    if grep -q "$site" /etc/hosts; then
+        sed -i'.bak' $'/127.0.0.1\t'"$site"'/d' /etc/hosts
     else
-        echo "$SITE is not blocked!"
+        echo "$site is not blocked!"
         return 1
     fi
 }
@@ -27,107 +27,107 @@ list() {
 }
 
 to_seconds() {
-    local TIME_AMOUNT=$1
-    local TIME_UNIT=$2
+    local time_amount=$1
+    local time_unit=$2
 
-    local TIME_MULTIPLIER=0
-    case $TIME_UNIT in
+    local time_multiplier=0
+    case $time_unit in
         second|seconds)
-            TIME_MULTIPLIER=1
+            time_multiplier=1
             ;;
         minute|minutes)
-            TIME_MULTIPLIER=60
+            time_multiplier=60
             ;;
         hour|hours)
-            TIME_MULTIPLIER=3600
+            time_multiplier=3600
             ;;
         day|days)
-            TIME_MULTIPLIER=86400
+            time_multiplier=86400
             ;;
     esac
 
-    local SECONDS=$((TIME_AMOUNT*TIME_MULTIPLIER))
-    echo $SECONDS
+    local seconds=$((time_amount*time_multiplier))
+    echo $seconds
 }
 
-ACTION=$1
+action=$1
 shift
 
-case $ACTION in
+case $action in
     list)
         list
         ;;
     block|unblock)
-        SITES=()
-        MODE='simple'
+        sites=()
+        mode='simple'
 
         while test ${#} -gt 0; do # Loops through all arguments with shift.
             case $1 in
                 for)
                     shift
-                    TIME_AMOUNT=$1
+                    time_amount=$1
                     shift
-                    TIME_UNIT=$1
-                    MODE='for'
+                    time_unit=$1
+                    mode='for'
                     ;;
                 until)
                     shift
-                    UNTIL=$1
-                    MODE='until'
+                    until=$1
+                    mode='until'
                     ;;
                 *)
-                    SITES+=($1)
+                    sites+=($1)
                     ;;
             esac
             shift
         done
 
-        BLOCKED_SITES=''
+        blocked_sites=''
 
-        for SITE in "${SITES[@]}"; do
-            eval "${ACTION}" "$SITE" # block or unblock.
+        for site in "${sites[@]}"; do
+            eval "${action}" "$site" # block or unblock.
             if [[ $? == 0 ]]; then
-                case $ACTION in
+                case $action in
                     'block')
-                        ACTION_MSG='Blocked'
+                        action_msg='Blocked'
                         ;;
                     'unblock')
-                        ACTION_MSG='Unblocked'
+                        action_msg='Unblocked'
                         ;;
                 esac
 
-                case $MODE in
+                case $mode in
                     'simple')
-                        echo "$ACTION_MSG $SITE"
+                        echo "$action_msg $site"
                         ;;
                     'for')
-                        echo "$ACTION_MSG $SITE for $TIME_AMOUNT $TIME_UNIT"
+                        echo "$action_msg $site for $time_amount $time_unit"
                         ;;
                     'until')
-                        echo "$ACTION_MSG $SITE until $UNTIL"
+                        echo "$action_msg $site until $until"
                         ;;
                 esac
 
-                BLOCKED_SITES="$BLOCKED_SITES $SITE"
+                blocked_sites="$blocked_sites $site"
             fi
         done
 
-        case $ACTION in
+        case $action in
             'block')
-                REVERSE_FN='unblock'
+                reverse_fn='unblock'
                 ;;
             'unblock')
-                REVERSE_FN='block'
+                reverse_fn='block'
                 ;;
         esac
 
-        case $MODE in
+        case $mode in
             'for')
-                SECONDS=$(to_seconds "$TIME_AMOUNT" "$TIME_UNIT")
-                (sleep "$SECONDS"; blk $REVERSE_FN "$BLOCKED_SITES" >& /dev/null)&
+                seconds=$(to_seconds "$time_amount" "$time_unit")
+                (sleep "$seconds"; blk $reverse_fn "$blocked_sites" >& /dev/null)&
                 ;;
             'until')
-                echo "blk $REVERSE_FN $BLOCKED_SITES" | at "$UNTIL"
+                echo "blk $reverse_fn $blocked_sites" | at "$until"
                 ;;
         esac
         ;;
