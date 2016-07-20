@@ -7,7 +7,7 @@ block() {
         echo "$site is already blocked!"
         return 1
     else
-        echo -e "127.0.0.1\t$site" | tee -a /etc/hosts > /dev/null
+        echo -e "127.0.0.1\t$site # blk" | tee -a /etc/hosts > /dev/null
     fi
 }
 
@@ -15,7 +15,7 @@ unblock() {
     local site=$1
 
     if grep -q "$site" /etc/hosts; then
-        sed -i'.bak' $'/127.0.0.1\t'"$site"'/d' /etc/hosts
+        sed -i'.bak' $'/^.*\t'"$site"' # blk/d' /etc/hosts
     else
         echo "$site is not blocked!"
         return 1
@@ -23,7 +23,10 @@ unblock() {
 }
 
 list() {
-    grep 127.0.0.1 /etc/hosts | grep -v localhost | sed $'s/127.0.0.1\t//g'
+    # 1. Find all lines with the tag # blk.
+    # 2. Remove everything before and including the first tab character (the url to redirect to).
+    # 3. Remove the blk tag.
+    grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g'
 }
 
 to_seconds() {
