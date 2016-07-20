@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+redirect_to=${BLK_REDIRECT_TO:-'127.0.0.1'}
+
 block() {
     local site=$1
 
@@ -7,7 +9,7 @@ block() {
         echo "$site is already blocked!"
         return 1
     else
-        echo -e "127.0.0.1\t$site # blk" | tee -a /etc/hosts > /dev/null
+        echo -e "$redirect_to\t$site # blk" | tee -a /etc/hosts > /dev/null
     fi
 }
 
@@ -77,6 +79,10 @@ case $action in
                     shift
                     until=$1
                     mode='until'
+                    ;;
+                --redirect-to)
+                    shift
+                    redirect_to=$1
                     ;;
                 *)
                     sites+=($1)
