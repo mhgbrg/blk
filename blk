@@ -9,7 +9,12 @@ block() {
         echo "$site is already blocked!"
         return 1
     else
-        echo -e "$redirect_to\t$site # blk" | tee -a /etc/hosts > /dev/null
+        # 1. Lookup DNS records for $redirect_to with dig.
+        # 2. Remove the first line of the input.
+        # 3. Format a hosts redirect string for each IP-address from the lookup and tag it with # blk.
+        # 4. Add formatted strings to hosts file and redirect output to /dev/null.
+        # TODO: Handle blocking of plain IP-addresses like 127.0.0.1.
+        dig +short "$redirect_to" | tail -n +2 | xargs -I {} echo $'{}\t'"$site"' # blk' | tee -a /etc/hosts > /dev/null
     fi
 }
 
@@ -28,6 +33,8 @@ list() {
     # 1. Find all lines with the tag # blk.
     # 2. Remove everything before and including the first tab character (the url to redirect to).
     # 3. Remove the blk tag.
+    # TODO: Print where site is redirected.
+    # TODO: Remove duplicates from list.
     grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g'
 }
 
