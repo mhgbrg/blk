@@ -82,9 +82,12 @@ case $action in
             shift
         done
 
-        while read -r pipe; do
-            sites+=($pipe)
-        done
+        # Checks if stdin exists (if data is being fed through pipe)
+        if [[ ! -t 0 ]]; then
+            while read -r pipe; do
+                sites+=($pipe)
+            done
+        fi
 
         blocked_sites=''
 
