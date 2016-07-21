@@ -92,33 +92,12 @@ case $action in
             done
         fi
 
-        blocked_sites=''
+        blocked_sites=()
 
         for site in "${sites[@]}"; do
             eval "${action}" "$site"
             if [[ $? == 0 ]]; then
-                case $action in
-                    'block')
-                        action_msg='Blocked'
-                        ;;
-                    'unblock')
-                        action_msg='Unblocked'
-                        ;;
-                esac
-
-                case $mode in
-                    'simple')
-                        echo "$action_msg $site"
-                        ;;
-                    'for')
-                        echo "$action_msg $site for $time_amount $time_unit"
-                        ;;
-                    'until')
-                        echo "$action_msg $site until $until"
-                        ;;
-                esac
-
-                blocked_sites="$blocked_sites $site"
+                blocked_sites+=($site)
             fi
         done
 
@@ -134,11 +113,34 @@ case $action in
         case $mode in
             'for')
                 seconds=$(to_seconds "$time_amount" "$time_unit")
-                (sleep "$seconds"; blk $reverse_fn "$blocked_sites" >& /dev/null)&
+                (sleep "$seconds"; blk $reverse_fn "${blocked_sites[*]}" >& /dev/null)&
                 ;;
             'until')
-                echo "blk $reverse_fn $blocked_sites" | at "$until"
+                echo "blk $reverse_fn ${blocked_sites[*]}" | at "$until"
                 ;;
         esac
+
+        case $action in
+            'block')
+                action_msg='Blocked'
+                ;;
+            'unblock')
+                action_msg='Unblocked'
+                ;;
+        esac
+
+        if [[ $blocked_sites ]]; then
+            case $mode in
+                'simple')
+                    echo "$action_msg ${blocked_sites[*]}"
+                    ;;
+                'for')
+                    echo "$action_msg ${blocked_sites[*]} for $time_amount $time_unit"
+                    ;;
+                'until')
+                    echo "$action_msg ${blocked_sites[*]} until $until"
+                    ;;
+            esac
+        fi
         ;;
 esac
