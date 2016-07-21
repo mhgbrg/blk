@@ -92,6 +92,7 @@ case $action in
             done
         fi
 
+        # TODO: Could also be "unblocked_sites". Rename to something better.
         blocked_sites=()
 
         for site in "${sites[@]}"; do
