@@ -111,15 +111,17 @@ case $action in
                 ;;
         esac
 
-        case $mode in
-            'for')
-                seconds=$(to_seconds "$time_amount" "$time_unit")
-                (sleep "$seconds"; blk $reverse_fn "${blocked_sites[*]}" >& /dev/null)&
-                ;;
-            'until')
-                echo "blk $reverse_fn ${blocked_sites[*]}" | at "$until"
-                ;;
-        esac
+        if [[ $blocked_sites ]]; then
+            case $mode in
+                'for')
+                    seconds=$(to_seconds "$time_amount" "$time_unit")
+                    (sleep "$seconds"; blk $reverse_fn "${blocked_sites[*]}" >& /dev/null)&
+                    ;;
+                'until')
+                    echo "blk $reverse_fn ${blocked_sites[*]}" | at "$until"
+                    ;;
+            esac
+        fi
 
         if [[ $blocked_sites ]]; then
             case $action in
@@ -132,7 +134,7 @@ case $action in
             esac
 
             for site in "${blocked_sites[@]}"; do
-                echo "* $site"
+                echo "- $site"
             done
 
             case $mode in
