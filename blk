@@ -121,25 +121,26 @@ case $action in
                 ;;
         esac
 
-        case $action in
-            'block')
-                action_msg='Blocked'
-                ;;
-            'unblock')
-                action_msg='Unblocked'
-                ;;
-        esac
-
         if [[ $blocked_sites ]]; then
-            case $mode in
-                'simple')
-                    echo "$action_msg ${blocked_sites[*]}"
+            case $action in
+                'block')
+                    echo 'Blocked:'
                     ;;
+                'unblock')
+                    echo 'Unblocked:'
+                    ;;
+            esac
+
+            for site in "${blocked_sites[@]}"; do
+                echo "* $site"
+            done
+
+            case $mode in
                 'for')
-                    echo "$action_msg ${blocked_sites[*]} for $time_amount $time_unit"
+                    echo "for $time_amount $time_unit"
                     ;;
                 'until')
-                    echo "$action_msg ${blocked_sites[*]} until $until"
+                    echo "until $until"
                     ;;
             esac
         fi
