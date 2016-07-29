@@ -42,16 +42,16 @@ to_seconds() {
 
     local time_multiplier=0
     case $time_unit in
-        second|seconds)
+        'second'|'seconds')
             time_multiplier=1
             ;;
-        minute|minutes)
+        'minute'|'minutes')
             time_multiplier=60
             ;;
-        hour|hours)
+        'hour'|'hours')
             time_multiplier=3600
             ;;
-        day|days)
+        'day'|'days')
             time_multiplier=86400
             ;;
     esac
@@ -64,23 +64,23 @@ action=$1
 shift
 
 case $action in
-    list)
+    'list')
         list
         ;;
-    block|unblock)
+    'block'|'unblock')
         sites=()
         mode='simple'
 
         while test ${#} -gt 0; do # Loops through all arguments with shift.
             case $1 in
-                for)
+                'for')
                     shift
                     time_amount=$1
                     shift
                     time_unit=$1
                     mode='for'
                     ;;
-                until)
+                'until')
                     shift
                     until=$1
                     mode='until'
