@@ -25,6 +25,18 @@ unblock() {
     fi
 }
 
+# Unblocks all sites currently blocked by blk.
+unblock_all() {
+    local sites
+    sites=$(grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g')
+
+    while read -r site; do # Loops over all lines in a string.
+        unblock "$site"
+    done <<< "$sites"
+
+    list
+}
+
 # Lists all sites currently blocked by blk.
 list() {
     # 1. Find all lines with the tag # blk.
@@ -66,6 +78,9 @@ shift
 case $action in
     'list')
         list
+        ;;
+    'unblock-all')
+        unblock_all
         ;;
     'block'|'unblock')
         sites=()
