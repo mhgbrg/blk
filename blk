@@ -111,7 +111,7 @@ case $action in
                 ;;
         esac
 
-        if [[ $blocked_sites ]]; then
+        if [[ ${#blocked_sites[@]} -gt 0 ]]; then # Checks if number of elements in array is greater than 0.
             case $mode in
                 'for')
                     seconds=$(to_seconds "$time_amount" "$time_unit")
@@ -121,9 +121,7 @@ case $action in
                     echo "blk $reverse_fn ${blocked_sites[*]}" | at "$until"
                     ;;
             esac
-        fi
 
-        if [[ $blocked_sites ]]; then
             case $action in
                 'block')
                     echo 'Blocked:'
