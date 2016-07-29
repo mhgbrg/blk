@@ -26,7 +26,8 @@ list() {
     # 1. Find all lines with the tag # blk.
     # 2. Remove everything before and including the first tab character (the url to redirect to).
     # 3. Remove the blk tag.
-    grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g'
+    echo 'Currently blocked websites:'
+    grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g' | xargs -n1 -I {} echo '- {}'
 }
 
 to_seconds() {
