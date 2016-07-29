@@ -86,8 +86,7 @@ case $action in
             shift
         done
 
-        # Checks if stdin exists (if data is being fed through pipe)
-        if [[ ! -t 0 ]]; then
+        if [[ ! -t 0 ]]; then # Checks if stdin exists (if data is being fed through pipe)
             while read -r pipe; do
                 sites+=($pipe)
             done
