@@ -26,7 +26,7 @@ unblock_all() {
     local sites
     sites=$(grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g')
 
-    while read -r site; do
+    while read -r site; do # Loops over all lines in a string.
         unblock "$site"
     done <<< "$sites"
 
