@@ -5,7 +5,7 @@
 block() {
     local site=$1
 
-    if grep -q "$site" /etc/hosts; then
+    if grep -q "$site # blk" /etc/hosts; then
         echo "$site is already blocked!"
         return 1
     else
@@ -17,7 +17,7 @@ block() {
 unblock() {
     local site=$1
 
-    if grep -q "$site" /etc/hosts; then
+    if grep -q "$site # blk" /etc/hosts; then
         sed -i'.bak' $'/^.*\t'"$site"' # blk/d' /etc/hosts
     else
         echo "$site is not blocked!"
@@ -128,27 +128,7 @@ case $action in
                     ;;
             esac
 
-            case $action in
-                'block')
-                    echo 'Blocked:'
-                    ;;
-                'unblock')
-                    echo 'Unblocked:'
-                    ;;
-            esac
-
-            for site in "${blocked_sites[@]}"; do
-                echo "- $site"
-            done
-
-            case $mode in
-                'for')
-                    echo "for $time_amount $time_unit"
-                    ;;
-                'until')
-                    echo "until $until"
-                    ;;
-            esac
+            list
         fi
         ;;
 esac
