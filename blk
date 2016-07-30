@@ -59,6 +59,7 @@ to_seconds() {
     echo $seconds
 }
 
+blk=$0
 action=$1
 shift
 
@@ -68,7 +69,7 @@ case $action in
         list | xargs -n1 -I {} echo '- {}'
         ;;
     'unblock-all')
-        list | blk 'unblock' "$@"
+        list | $blk 'unblock' "$@"
         ;;
     'block'|'unblock')
         sites=()
@@ -123,14 +124,14 @@ case $action in
             case $mode in
                 'for')
                     seconds=$(to_seconds "$time_amount" "$time_unit")
-                    (sleep "$seconds"; blk $reverse_fn "${modified_sites[*]}" >& /dev/null)&
+                    (sleep "$seconds"; $blk $reverse_fn "${modified_sites[*]}" >& /dev/null)&
                     ;;
                 'until')
-                    echo "blk $reverse_fn ${modified_sites[*]}" | at "$until"
+                    echo "$blk $reverse_fn ${modified_sites[*]}" | at "$until"
                     ;;
             esac
         fi
 
-        blk list
+        $blk list
         ;;
 esac
