@@ -20,7 +20,7 @@ A simple bash script that makes it a breeze to block distracting websites.
 
     blk unblock <site1> <site2> <site3> ... [for <number> (seconds | minutes | hours | days) | until <time>]
     
-### Unblock all blocked websites.
+### Unblock all blocked websites
 
     blk unblock-all [for <number> (seconds | minutes | hours | days) | until <time>]
 
