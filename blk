@@ -1,5 +1,50 @@
 #!/usr/bin/env bash
 
+modify() {
+    local action=$1
+    local sites=$2
+    local mode=$3
+
+    local modified_sites=()
+
+    if [[ $sites ]]; then
+        while read -r site; do # Loops over all lines in a string.
+            if [[ $site ]]; then
+                eval "${action}" "$site"
+                if [[ $? == 0 ]]; then
+                    modified_sites+=($site)
+                fi
+            fi
+        done <<< "$sites"
+    fi
+
+    case $action in
+        'block')
+            reverse_fn='unblock'
+            ;;
+        'unblock')
+            reverse_fn='block'
+            ;;
+    esac
+
+    if [[ ${#modified_sites[@]} -gt 0 ]]; then # Checks if number of elements in array is greater than 0.
+        case $mode in
+            'for')
+                local time_amount=$4
+                local time_unit=$5
+                seconds=$(to_seconds "$time_amount" "$time_unit")
+                (sleep "$seconds"; blk $reverse_fn "${modified_sites[*]}" >& /dev/null)&
+                ;;
+            'until')
+                local until=$4
+                echo "blk $reverse_fn ${modified_sites[*]}" | at "$until"
+                ;;
+        esac
+    fi
+
+    list
+}
+
 # Blocks a single site by adding a line to the hosts file that redirects it to
 # localhost.
 block() {
@@ -23,20 +68,6 @@ unblock() {
         echo "$site is not blocked!"
         return 1
     fi
-}
-
-# Unblocks all sites currently blocked by blk.
-unblock_all() {
-    local sites
-    sites=$(grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g')
-
-    if [[ $sites ]]; then
-        while read -r site; do # Loops over all lines in a string.
-            unblock "$site"
-        done <<< "$sites"
-    fi
-
-    list
 }
 
 # Lists all sites currently blocked by blk.
@@ -82,10 +113,29 @@ case $action in
         list
         ;;
     'unblock-all')
-        unblock_all
+        sites=$(grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g')
+
+        if [[ ${#} -eq 0 ]]; then # If there are no arguments.
+            modify 'unblock' "$sites" 'simple'
+        else
+            case $1 in
+                'for')
+                    shift
+                    time_amount=$1
+                    shift
+                    time_unit=$1
+                    modify 'unblock' "$sites" 'for' "$time_amount" "$time_unit"
+                    ;;
+                'until')
+                    shift
+                    until=$1
+                    modify 'unblock' "$sites" 'until' "$until"
+                    ;;
+            esac
+        fi
         ;;
     'block'|'unblock')
-        sites=()
+        sites=''
         mode='simple'
 
         while test ${#} -gt 0; do # Loops through all arguments with shift.
@@ -103,7 +153,7 @@ case $action in
                     mode='until'
                     ;;
                 *)
-                    sites+=($1)
+                    sites="$sites"$'\n'"$1"
                     ;;
             esac
             shift
@@ -111,41 +161,20 @@ case $action in
 
         if [[ ! -t 0 ]]; then # Checks if stdin exists (if data is being fed through pipe)
             while read -r pipe; do
-                sites+=($pipe)
+                sites="$sites\n$pipe"
             done
         fi
 
-        # TODO: Could also be "unblocked_sites". Rename to something better.
-        blocked_sites=()
-
-        for site in "${sites[@]}"; do
-            eval "${action}" "$site"
-            if [[ $? == 0 ]]; then
-                blocked_sites+=($site)
-            fi
-        done
-
-        case $action in
-            'block')
-                reverse_fn='unblock'
+        case $mode in
+            'simple')
+                modify "$action" "$sites"
                 ;;
-            'unblock')
-                reverse_fn='block'
+            'for')
+                modify "$action" "$sites" 'for' "$time_amount" "$time_unit"
+                ;;
+            'until')
+                modify "$action" "$sites" 'until' "$until"
                 ;;
         esac
-
-        if [[ ${#blocked_sites[@]} -gt 0 ]]; then # Checks if number of elements in array is greater than 0.
-            case $mode in
-                'for')
-                    seconds=$(to_seconds "$time_amount" "$time_unit")
-                    (sleep "$seconds"; blk $reverse_fn "${blocked_sites[*]}" >& /dev/null)&
-                    ;;
-                'until')
-                    echo "blk $reverse_fn ${blocked_sites[*]}" | at "$until"
-                    ;;
-            esac
-
-            list
-        fi
         ;;
 esac
