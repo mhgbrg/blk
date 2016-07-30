@@ -7,6 +7,7 @@ A simple bash script that makes it a breeze to block distracting websites.
 * Block/unblock one or more websites at once, both via parameters and pipes.
 * Block/unblock for a set period of time, for example *2 hours*.
 * Block/unblock until a specific time, for example *13.38*.
+* Unblock all blocked websites.
 * List all blocked websites.
 
 ## Usage
@@ -18,6 +19,10 @@ A simple bash script that makes it a breeze to block distracting websites.
 ### Unblock websites
 
     blk unblock <site1> <site2> <site3> ... [for <number> (seconds | minutes | hours | days) | until <time>]
+    
+### Unblock all blocked websites.
+
+    blk unblock-all [for <number> (seconds | minutes | hours | days) | until <time>]
 
 ### List blocked websites
 
@@ -33,15 +38,6 @@ To block a couple of websites at once:
 
     blk block news.ycombinator.com www.facebook.com www.youtube.com
 
-To block a list of websites, here defined in a file in the user's home directory:
-
-    blk block $(cat ~/.block-list)
-    cat ~/.block-list | blk block
-
-To unblock a website:
-
-    blk unblock news.ycombinator.com
-
 To unblock a website for 15 minutes:
 
     blk unblock news.ycombinator.com for 15 minutes
@@ -49,11 +45,12 @@ To unblock a website for 15 minutes:
 To block a website until 17.30:
 
     blk block news.ycombinator.com until 17.30
+    
+To block a list of websites, here defined in a file in the user's home directory:
 
-To unblock all blocked websites:
-
-    blk unblock $(blk list)
-    blk list | blk unblock
+    blk block $(cat ~/.block-list)
+    or
+    cat ~/.block-list | blk block
 
 ## Requirements
 
