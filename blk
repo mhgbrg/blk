@@ -69,7 +69,7 @@ case $action in
         list | xargs -n1 -I {} echo '- {}'
         ;;
     'unblock-all')
-        list | $blk 'unblock' "$@"
+        list | $blk 'unblock' "$@" # $@ == all parameters after 'unblock-all'.
         ;;
     'block'|'unblock')
         sites=()
