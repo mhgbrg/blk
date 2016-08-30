@@ -19,7 +19,7 @@ A simple bash script that makes it a breeze to block distracting websites.
 ### Unblock websites
 
     blk unblock <site1> <site2> <site3> ... [for <number> (seconds | minutes | hours | days) | until <time>]
-    
+
 ### Unblock all blocked websites
 
     blk unblock-all [for <number> (seconds | minutes | hours | days) | until <time>]
@@ -45,7 +45,7 @@ To unblock a website for 15 minutes:
 To block a website until 17.30:
 
     blk block news.ycombinator.com until 17.30
-    
+
 To block a list of websites, here defined in a file in the user's home directory:
 
     blk block $(cat ~/.block-list)
@@ -56,7 +56,7 @@ To block a list of websites, here defined in a file in the user's home directory
 
 To use `blk` you need to have `bash` installed. I would recommend updating to the latest version if you haven't.
 
-To block websites `blk` adds a line to the computer's hosts file that redirects the website to localhost. Depending on the permissions on your hosts file, you might need to run the script with `sudo`.
+To block websites `blk` adds a line to the computer's hosts file that redirects the website to localhost. Depending on the permissions on your hosts file, you might need to run the script with `sudo`. If you don't want to use `sudo`, you can change the permissions of the hosts file with `chmod 646 /etc/hosts` so that your user gets permission to write.
 
 To use the `until` functionality you need to have the [`at`](http://manpages.ubuntu.com/manpages/xenial/en/man1/at.1.html) command installed and working. On macOS `at` is installed per default, but the `atrun` daemon is not running. To fix this, run `launchctl load -w /System/Library/LaunchDaemons/com.apple.atrun.plist` and restart your computer (see `man atrun` for more info).
 

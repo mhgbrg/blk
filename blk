@@ -9,7 +9,8 @@ block() {
         echo "$site is already blocked!"
         return 1
     else
-        echo -e "127.0.0.1\t$site # blk" | tee -a /etc/hosts > /dev/null
+        # -e is needed for \t to be expanded.
+        echo -e "127.0.0.1\t$site # blk" >> /etc/hosts
     fi
 }
 
@@ -18,7 +19,11 @@ unblock() {
     local site=$1
 
     if grep -q "$site # blk" /etc/hosts; then
-        sed -i'.bak' $'/^.*\t'"$site"' # blk/d' /etc/hosts
+        # Remove the blocked site from hosts, output the edited file to a new
+        # temporary file, and then replace the original hosts file with it.
+        sed $'/^.*\t'"$site"' # blk/d' /etc/hosts > /tmp/hosts
+        cp /tmp/hosts /etc/
+        rm /tmp/hosts
     else
         echo "$site is not blocked!"
         return 1
