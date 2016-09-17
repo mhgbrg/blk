@@ -2,6 +2,11 @@
 
 A simple bash script that makes it a breeze to block distracting websites.
 
+## Installation
+
+    brew tap mhgbrg/homebrew-tap
+    brew install blk
+
 ## Usage
 
 To block a few websites:
