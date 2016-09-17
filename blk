@@ -1,142 +1,174 @@
 #!/usr/bin/env bash
 
-# Blocks a single site by adding a line to the hosts file that redirects it to
-# localhost.
-block() {
-    local site=$1
+# Save reference to blk command in order to do subsequent calls later.
+blk=$0
 
-    if grep -q "$site # blk" /etc/hosts; then
-        echo "$site is already blocked!"
-        return 1
-    else
-        # -e is needed for \t to be expanded.
-        echo -e "127.0.0.1\t$site # blk" >> /etc/hosts
-    fi
-}
+# First parameter can be an action. If it isn't, default to `block`.
+case $1 in
+    'list')
+        # Find all lines with the blk tag, and then remove everything except
+        # the site name and any additional info.
+        grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk //g'
+        exit
+        ;;
+    'block'|'unblock')
+        action="$1"
+        shift
+        ;;
+    *)
+        action='block'
+        ;;
+esac
 
-# Unblocks a single site by removing its redirection from the hosts file.
-unblock() {
-    local site=$1
+if [[ -f "$1" ]]; then
+    # If first parameter after action is a file, feed file contents to blk via
+    # stdin with the same arguments.
+    file=$1
+    shift # So that the parameter "all" is not sent to blk with "$@".
+    $blk "$action" "$@" < "$file"
+elif [[ "$1" == "all" ]]; then
+    # If first parameter is "all", either block all sites from the blk list or
+    # unblock all blocked websites.
+    shift # So that the parameter "all" is not sent to blk with "$@".
+    case $action in
+        'block')
+            if [[ -n "$BLK_LIST" ]]; then
+                blk_list=$BLK_LIST
+            else
+                blk_list="$HOME/.blk-list"
+            fi
 
-    if grep -q "$site # blk" /etc/hosts; then
-        # Remove the blocked site from hosts, output the edited file to a new
-        # temporary file, and then replace the original hosts file with it.
-        sed $'/^.*\t'"$site"' # blk/d' /etc/hosts > /tmp/hosts
-        cp /tmp/hosts /etc/
-        rm /tmp/hosts
-    else
-        echo "$site is not blocked!"
-        return 1
-    fi
-}
-
-# Lists all sites currently blocked by blk.
-list() {
-    # 1. Find all lines with the tag # blk.
-    # 2. Remove everything before and including the first tab character (the url to redirect to).
-    # 3. Remove the blk tag.
-    grep '# blk' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk//g'
-}
-
-# Converts two arguments on the form <number> <time unit> to seconds.
-# Example: 'to_seconds 2 minutes' returns 120.
-to_seconds() {
-    local time_amount=$1
-    local time_unit=$2
-
-    local time_multiplier=0
-    case $time_unit in
-        'second'|'seconds')
-            time_multiplier=1
+            if [[ -f $blk_list ]]; then
+                $blk 'block' "$@" < "$blk_list"
+            else
+                echo "File $blk_list does not exist!"
+            fi
             ;;
-        'minute'|'minutes')
-            time_multiplier=60
+        'unblock')
+            # Find all sites blocked by blk and pipe them back to blk with the
+            # `unblock` command.
+            grep '# blk blocked' /etc/hosts | sed $'s/^.*\t//g' | sed 's/# blk .*$//g' | $blk 'unblock' "$@"
             ;;
-        'hour'|'hours')
-            time_multiplier=3600
+    esac
+else
+    # "Normal usage".
+    mode='simple'
+
+    case $action in
+        'block')
+            reverse_fn='unblock'
             ;;
-        'day'|'days')
-            time_multiplier=86400
+        'unblock')
+            reverse_fn='block'
             ;;
     esac
 
-    local seconds=$((time_amount*time_multiplier))
-    echo $seconds
-}
-
-blk=$0
-action=$1
-shift
-
-case $action in
-    'list')
-        echo 'Currently blocked websites:'
-        list | xargs -n1 -I {} echo '- {}'
-        ;;
-    'unblock-all')
-        list | $blk 'unblock' "$@" # $@ == all parameters after 'unblock-all'.
-        ;;
-    'block'|'unblock')
-        sites=()
-        mode='simple'
-
-        while test ${#} -gt 0; do # Loops through all arguments with shift.
-            case $1 in
-                'for')
-                    shift
-                    time_amount=$1
-                    shift
-                    time_unit=$1
-                    mode='for'
-                    ;;
-                'until')
-                    shift
-                    until=$1
-                    mode='until'
-                    ;;
-                *)
-                    sites+=($1)
-                    ;;
-            esac
-            shift
-        done
-
-        if [[ ! -t 0 ]]; then # Checks if stdin exists (if data is being fed through pipe).
-            while read -r pipe; do
-                sites+=($pipe)
-            done
-        fi
-
-        modified_sites=()
-
-        for site in "${sites[@]}"; do
-            eval "${action}" "$site"
-            if [[ $? == 0 ]]; then
-                modified_sites+=($site)
-            fi
-        done
-
-        case $action in
-            'block')
-                reverse_fn='unblock'
+    # Begin parsing sites. Stop when `for` or `until` is found.
+    while test ${#} -gt 0; do # Loops through all arguments with shift.
+        case $1 in
+            'for')
+                mode='for'
+                shift
+                time_amount=$1
+                shift
+                time_unit=$1
+                at_cmd="now + $time_amount $time_unit"
+                break
                 ;;
-            'unblock')
-                reverse_fn='block'
+            'until')
+                mode='until'
+                shift
+                until=$1
+                at_cmd="$until"
+                break
+                ;;
+            *)
+                sites+=($1)
                 ;;
         esac
 
-        if [[ ${#modified_sites[@]} -gt 0 ]]; then # Checks if number of elements in array is greater than 0.
-            case $mode in
-                'for')
-                    seconds=$(to_seconds "$time_amount" "$time_unit")
-                    (sleep "$seconds"; $blk $reverse_fn "${modified_sites[*]}" >& /dev/null)&
-                    ;;
-                'until')
-                    echo "$blk $reverse_fn ${modified_sites[*]}" | at "$until"
-                    ;;
-            esac
+        shift
+    done
+
+    # Read all rows from from stdin as sites.
+    if [[ ! -t 0 ]]; then # Checks if stdin exists.
+        while read -r pipe; do
+            sites+=($pipe)
+        done
+    fi
+
+    # Apply action to every site.
+    for site in "${sites[@]}"; do # Loops through array.
+        if grep "$site # blk" /etc/hosts | grep -q -v "^#"; then
+            # A line already exists for the site.
+            if [[ "$action" = 'block' ]]; then
+                echo "$site is already blocked!"
+                continue
+            fi
+        else
+            # No line exists for the site.
+            if [[ "$action" = 'unblock' ]]; then
+                echo "$site is not blocked!"
+                continue
+            fi
         fi
 
-        $blk list
-        ;;
-esac
+        info_str=''
+        case $mode in
+            'for'|'until')
+                # No quotes for at_cmd so that all words in the string are
+                # considered as separate params.
+                at_info=$(echo "$blk $reverse_fn $site" | at $at_cmd 2>&1)
+                at_job=$(echo "$at_info" | grep -o "job [0-9]\+" | grep -o "[0-9]\+")
+                at_time=$(echo "$at_info" | grep -o "[0-9][0-9]:[0-9][0-9]")
+                info_str="until $at_time ($at_job)"
+                ;;
+        esac
+
+        case $action in
+            'block')
+                # Check if the site is temporary unblocked.
+                if grep "$site # blk" /etc/hosts | grep -q "^#"; then
+                    # If it is, cancel the previous at job and reinsert the
+                    # commented line.
+                    prev_at_job=$(grep "$site # blk" /etc/hosts | grep -o '([0-9]\+)' | tr -d '()')
+                    atrm "$prev_at_job"
+
+                    sed $'s/^# \(.*\t'"$site"' # blk\).*$/\1 blocked '"$info_str"'/g' /etc/hosts > /tmp/hosts
+                    cp /tmp/hosts /etc/
+                    rm /tmp/hosts
+                else
+                    # If it's not, insert a new line.
+                    # -e is needed for \t to be expanded.
+                    echo -e "127.0.0.1\t$site # blk blocked $info_str" >> /etc/hosts
+                fi
+                ;;
+            'unblock')
+                # Check if site has been temporary blocked.
+                prev_at_job=$(grep "$site # blk" /etc/hosts | grep -o '([0-9]\+)' | tr -d '()')
+                if [[ -n "$prev_at_job" ]]; then
+                    # If it is, cancel the previous at job.
+                    atrm "$prev_at_job"
+                fi
+
+                regex=$'\(^.*\t'"$site"' # blk\).*$'
+
+                if [[ $mode = 'simple' ]]; then
+                    # If simple mode, simply remove the line.
+                    regex="/$regex/d"
+                else
+                    # If not simple mode, comment line instead.
+                    regex="s/$regex/# \1 unblocked $info_str/g"
+                fi
+
+                # hosts file can't be changed in place since a normal user
+                # usually doesn't have write access to /etc/.
+                sed "$regex" /etc/hosts > /tmp/hosts
+                cp /tmp/hosts /etc/
+                rm /tmp/hosts
+                ;;
+        esac
+
+        echo "$site $action""ed $info_str"
+    done
+fi
