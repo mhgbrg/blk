@@ -3,6 +3,19 @@
 # Save reference to blk command in order to do subsequent calls later.
 blk=$0
 
+if [[ -z $1 ]]; then
+    echo "Block/unblock websites:"
+    echo ""
+    echo "    blk [block|unblock] <site1> <site2> <site3> ... [for <amount> <unit> | until <time>]"
+    echo ""
+    echo "List blocked and temporary unblocked websites:"
+    echo ""
+    echo "    blk list"
+    echo ""
+    echo "See github.com/mhgbrg/blk for more examples."
+    exit
+fi
+
 # First parameter can be an action. If it isn't, default to `block`.
 case $1 in
     'list')
