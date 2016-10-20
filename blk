@@ -83,6 +83,10 @@ else
                 mode='for'
                 shift
                 time_amount=$1
+                if ! [[ "$time_amount" =~ ^[0-9]+$ ]]; then
+                    echo "Amount of time must be specified as an integer."
+                    exit
+                fi
                 shift
                 time_unit=$1
                 at_cmd="now + $time_amount $time_unit"
