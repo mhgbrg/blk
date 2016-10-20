@@ -7,6 +7,10 @@ A simple bash script that makes it a breeze to block distracting websites.
     brew tap mhgbrg/homebrew-tap
     brew install blk
 
+To block websites `blk` adds a line to the computer's hosts file that redirects the website to localhost. Depending on the permissions on your hosts file, you might need to run the script with `sudo`. If you don't want to use `sudo`, you can change the permissions of the hosts file with `chmod 646 /etc/hosts` so that your user gets permission to write (this makes using the script **so** much more convenient).
+
+Also make sure you have enabled the `atrun` daemon if you want to use automatic blocking/unblocking. See requirements for more info.
+
 ## Usage
 
 To block a few websites:
@@ -51,8 +55,6 @@ You can also feed sites to `blk` through stdin, for example:
 ## Requirements
 
 To use `blk` you need to have `bash` installed. I would recommend updating to the latest version if you haven't.
-
-To block websites `blk` adds a line to the computer's hosts file that redirects the website to localhost. Depending on the permissions on your hosts file, you might need to run the script with `sudo`. If you don't want to use `sudo`, you can change the permissions of the hosts file with `chmod 646 /etc/hosts` so that your user gets permission to write (this makes using the script **so** much more convenient).
 
 To use the `for` and `until` functionality you need to have the [`at`](http://manpages.ubuntu.com/manpages/xenial/en/man1/at.1.html) command installed and working. On macOS `at` is installed per default, but the `atrun` daemon is not running. To fix this, run `launchctl load -w /System/Library/LaunchDaemons/com.apple.atrun.plist` and restart your computer (see `man atrun` for more info).
 
